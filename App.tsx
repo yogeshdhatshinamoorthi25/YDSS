@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Heart, ChevronRight, Lock, Unlock, Smartphone, Download, Share2, Copy, Check, Info } from 'lucide-react';
+import { Heart, ChevronRight, Lock, Unlock, Smartphone, Download, Share2, Copy, Check, Info, RefreshCw } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { LOVE_MESSAGES, TIMELINE_DATA } from './constants';
 import FloatingHearts from './components/FloatingHearts';
@@ -87,6 +87,15 @@ const App: React.FC = () => {
     });
   };
 
+  const handleClearCache = () => {
+    if ('serviceWorker' in navigator) {
+      caches.keys().then((names) => {
+        for (let name of names) caches.delete(name);
+      });
+      window.location.reload();
+    }
+  };
+
   const handleShare = async () => {
     if (navigator.share) {
       try {
@@ -120,27 +129,30 @@ const App: React.FC = () => {
               <div className="w-12 h-12 bg-pink-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Download className="w-6 h-6 text-pink-500" />
               </div>
-              <h2 className="text-xl font-serif">Install YS Story</h2>
+              <h2 className="text-xl font-serif">App Helper</h2>
             </div>
 
             <div className="space-y-4">
               <div className="p-4 bg-pink-50/50 border border-pink-100 rounded-2xl flex gap-3 text-pink-700 text-sm">
                 <Info className="w-5 h-5 shrink-0" />
-                <p>Host this on <strong>Vercel</strong> or <strong>GitHub Pages</strong> to get a real link you can open on your phone!</p>
+                <p>If you see <strong>"Code not found"</strong>, it means your browser has a stuck version. Try clearing the cache below.</p>
               </div>
 
-              <button onClick={handleShare} className="w-full py-4 bg-pink-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all">
-                <Share2 className="w-4 h-4" /> {navigator.share ? 'Share Link' : 'Copy Link'}
+              <button onClick={handleClearCache} className="w-full py-4 bg-white border-2 border-pink-100 text-pink-500 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all">
+                <RefreshCw className="w-4 h-4" /> Reset App Cache
               </button>
-              
-              {copySuccess && <p className="text-center text-green-500 text-xs font-bold animate-bounce">Link Copied!</p>}
+
+              <button onClick={handleShare} className="w-full py-4 bg-pink-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all">
+                <Share2 className="w-4 h-4" /> {navigator.share ? 'Share App' : 'Copy Link'}
+              </button>
             </div>
 
             <div className="mt-8 pt-6 border-t border-gray-100 text-left">
-              <p className="text-[11px] text-gray-500 font-bold uppercase tracking-wider mb-2">Once on your phone:</p>
+              <p className="text-[11px] text-gray-500 font-bold uppercase tracking-wider mb-2">To fix "Code not found":</p>
               <ul className="text-[11px] text-gray-600 space-y-1 list-disc pl-4">
-                <li><strong>Android:</strong> Tap ⋮ and "Install app"</li>
-                <li><strong>iPhone:</strong> Tap Share and "Add to Home Screen"</li>
+                <li>Make sure you are NOT using the "blob:" link.</li>
+                <li>Connect your GitHub to <strong>Vercel.com</strong> (free).</li>
+                <li>Vercel handles the "build" step so your phone can read the code.</li>
               </ul>
             </div>
           </div>
@@ -299,7 +311,7 @@ const App: React.FC = () => {
         {/* SCREEN 5: PROPOSAL */}
         {currentScreen === Screen.PROPOSAL && (
           <div className="flex flex-col items-center justify-center min-h-full text-center py-12">
-            <FadeIn className="w-full max-w-sm">
+            <FadeIn className="w-full max-sm:max-w-xs">
               {proposalStatus === 'pending' ? (
                 <>
                   <div className="space-y-4 mb-12 text-lg text-gray-600 italic font-serif">
