@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Heart, ChevronRight, ChevronLeft, Lock, Unlock, Smartphone, Download, AlertCircle, Share2, Copy, Check, ExternalLink } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Heart, ChevronRight, Lock, Unlock, Smartphone, Download, Share2, Copy, Check, Info } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { LOVE_MESSAGES, TIMELINE_DATA } from './constants';
 import FloatingHearts from './components/FloatingHearts';
@@ -39,12 +39,6 @@ const App: React.FC = () => {
   const [proposalStatus, setProposalStatus] = useState<'pending' | 'yes' | 'always'>('pending');
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
-  const [isBlobUrl, setIsBlobUrl] = useState(false);
-
-  useEffect(() => {
-    // Detect if the app is running as a blob (temporary sandbox)
-    setIsBlobUrl(window.location.protocol === 'blob:');
-  }, []);
 
   const handleGateSubmit = () => {
     setGateError('');
@@ -57,7 +51,6 @@ const App: React.FC = () => {
     } else if (gateStep === 2) {
       if (cityInput.trim().toLowerCase() === 'grenoble') {
         setIsUnlocked(true);
-        // Automatically navigate to Screen 2 after 3 seconds as requested
         setTimeout(() => setCurrentScreen(Screen.WELCOME), 3500);
       } else {
         setGateError('Not quite… think about the city where destiny worked overtime 🚲');
@@ -91,16 +84,24 @@ const App: React.FC = () => {
     navigator.clipboard.writeText(url).then(() => {
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
-    }).catch(() => {
-      alert("Please manually select the URL in your browser's address bar and copy it.");
     });
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'YS Story', url: window.location.href });
+      } catch (e) { handleCopyLink(); }
+    } else {
+      handleCopyLink();
+    }
   };
 
   return (
     <div className={`relative h-full w-full bg-[#FFF5F7] text-gray-800 selection:bg-pink-100 selection:text-pink-600 transition-colors duration-[2000ms] ${isUnlocked && currentScreen === Screen.GATE ? 'bg-black/20' : ''}`}>
       <FloatingHearts />
 
-      {/* Install Helper FAB */}
+      {/* FAB - Help/Install */}
       {currentScreen === Screen.GATE && !isUnlocked && (
         <button 
           onClick={() => setShowInstallModal(true)}
@@ -110,61 +111,37 @@ const App: React.FC = () => {
         </button>
       )}
 
-      {/* Installation Modal - Improved guidance for Blob URLs */}
+      {/* Installation Modal */}
       {showInstallModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm animate-[fadeIn_0.3s_ease-out]">
-          <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden">
-            <button onClick={() => setShowInstallModal(false)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600">✕</button>
+          <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl relative">
+            <button onClick={() => setShowInstallModal(false)} className="absolute top-6 right-6 text-gray-400">✕</button>
             <div className="text-center mb-6">
               <div className="w-12 h-12 bg-pink-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Download className="w-6 h-6 text-pink-500" />
               </div>
-              <h2 className="text-xl font-serif">Get the YS App</h2>
+              <h2 className="text-xl font-serif">Install YS Story</h2>
             </div>
 
-            {isBlobUrl ? (
-              <div className="space-y-4">
-                <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl">
-                  <div className="flex gap-2 text-amber-700 text-sm font-bold mb-2">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>Important Note</span>
-                  </div>
-                  <p className="text-xs text-amber-800 leading-relaxed">
-                    You are currently in <strong>Preview Mode</strong>. The URL starting with <code className="bg-amber-100 px-1">blob:</code> is temporary and won't work on your phone.
-                  </p>
-                </div>
-                
-                <div className="space-y-3">
-                  <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider">How to fix this:</p>
-                  <div className="text-sm text-gray-600 space-y-2">
-                    <div className="flex gap-3 items-start">
-                      <div className="w-5 h-5 bg-pink-100 text-pink-500 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">1</div>
-                      <p>Look for a button in the top right of your editor that looks like a <strong>square with an arrow</strong> <ExternalLink className="inline w-3 h-3" /> or says <strong>"Open in New Window"</strong>.</p>
-                    </div>
-                    <div className="flex gap-3 items-start">
-                      <div className="w-5 h-5 bg-pink-100 text-pink-500 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">2</div>
-                      <p>Once it opens in a new tab, copy the link from the <strong>address bar</strong> (it should start with <code>https://</code>).</p>
-                    </div>
-                  </div>
-                </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-pink-50/50 border border-pink-100 rounded-2xl flex gap-3 text-pink-700 text-sm">
+                <Info className="w-5 h-5 shrink-0" />
+                <p>Host this on <strong>Vercel</strong> or <strong>GitHub Pages</strong> to get a real link you can open on your phone!</p>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <p className="text-sm text-gray-600 mb-4">Copy this link and open it in <strong>Chrome</strong> on your Android phone to install.</p>
-                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 break-all text-[10px] font-mono mb-4">
-                  {window.location.href}
-                </div>
-                <button 
-                  onClick={handleCopyLink} 
-                  className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${copySuccess ? 'bg-green-500 text-white' : 'bg-pink-500 text-white shadow-lg active:scale-95'}`}
-                >
-                  {copySuccess ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  {copySuccess ? 'Copied!' : 'Copy Real Link'}
-                </button>
-              </div>
-            )}
-            <div className="mt-8 pt-6 border-t border-gray-100 text-center">
-              <p className="text-[10px] text-gray-400 italic font-sans">Handcrafted for Murugesa 🌷</p>
+
+              <button onClick={handleShare} className="w-full py-4 bg-pink-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all">
+                <Share2 className="w-4 h-4" /> {navigator.share ? 'Share Link' : 'Copy Link'}
+              </button>
+              
+              {copySuccess && <p className="text-center text-green-500 text-xs font-bold animate-bounce">Link Copied!</p>}
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-gray-100 text-left">
+              <p className="text-[11px] text-gray-500 font-bold uppercase tracking-wider mb-2">Once on your phone:</p>
+              <ul className="text-[11px] text-gray-600 space-y-1 list-disc pl-4">
+                <li><strong>Android:</strong> Tap ⋮ and "Install app"</li>
+                <li><strong>iPhone:</strong> Tap Share and "Add to Home Screen"</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -177,7 +154,7 @@ const App: React.FC = () => {
           <div className="flex flex-col items-center justify-center min-h-full">
             {!isUnlocked ? (
               <FadeIn className="w-full text-center">
-                <h1 className="text-3xl font-serif mb-2 italic px-2">“Only one person can enter this story…”</h1>
+                <h1 className="text-3xl font-serif mb-2 italic">“Only one person can enter this story…”</h1>
                 <p className="text-pink-400 font-sans tracking-widest text-[10px] uppercase mb-12">This space belongs to us 🌸</p>
                 
                 <div className="bg-white/90 backdrop-blur-sm p-8 rounded-[2.5rem] shadow-xl border border-pink-50">
